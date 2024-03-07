@@ -126,7 +126,7 @@ class CRNN(RecognitionModel, nn.Module):
         super().__init__()
         self.vocab = vocab
         self.cfg = cfg
-        self.max_length = 64 # 32
+        self.max_length = 256 # 64 # 32
         self.exportable = exportable
         self.feat_extractor = feature_extractor
 

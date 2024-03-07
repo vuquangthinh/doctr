@@ -1,0 +1,13 @@
+# opencv-python
+# numpy
+# ultralytics
+# pytesseract
+# mrz
+
+# typing
+
+# fastapi
+# uvicorn[standard]
+# python-multipart
+
+trdg

@@ -12,7 +12,7 @@ from doctr.file_utils import is_tf_available
 from doctr.io import DocumentFile
 from doctr.utils.visualization import visualize_page
 
-if is_tf_available():
+if False and is_tf_available():
     import tensorflow as tf
     from backend.tensorflow import DET_ARCHS, RECO_ARCHS, forward_image, load_predictor
 
@@ -119,6 +119,35 @@ def main(det_archs, reco_archs):
                 st.markdown("\nHere are your analysis results in JSON format:")
                 st.json(page_export, expanded=False)
 
+def extract_image(predictor, image):
+    """Forward an image through the predictor
+
+    Args:
+    ----
+        predictor: instance of OCRPredictor
+        image: image to process
+        device: torch.device, the device to process the image on
+
+    Returns:
+    -------
+        segmentation map
+    """
+    # with torch.no_grad():
+    #     processed_batches = predictor.det_predictor.pre_processor([image])
+    #     out = predictor.det_predictor.model(processed_batches[0], return_model_output=True)
+    #     seg_map = out["out_map"].to("cpu").numpy()
+    #     return seg_map
+    
+    return ({
+        'foo': 'bar',
+        'baz': 'boz',
+        'stuff': [
+            'stuff 1',
+            'stuff 2',
+            'stuff 3',
+            'stuff 5',
+        ],
+    })
 
 if __name__ == "__main__":
     main(DET_ARCHS, RECO_ARCHS)

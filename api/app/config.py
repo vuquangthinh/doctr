@@ -7,7 +7,7 @@ import os
 
 import doctr
 
-PROJECT_NAME: str = "docTR API template"
-PROJECT_DESCRIPTION: str = "Template API for Optical Character Recognition"
+PROJECT_NAME: str = "KHMER OCR"
+PROJECT_DESCRIPTION: str = "OCR for Khmer identity card"
 VERSION: str = doctr.__version__
 DEBUG: bool = os.environ.get("DEBUG", "") != "False"

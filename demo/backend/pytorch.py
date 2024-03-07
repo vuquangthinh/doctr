@@ -65,7 +65,7 @@ def load_predictor(
         straighten_pages=straighten_pages,
         export_as_straight_boxes=straighten_pages,
         detect_orientation=not assume_straight_pages,
-    ).to(device)
+    )
     predictor.det_predictor.model.postprocessor.bin_thresh = bin_thresh
     predictor.det_predictor.model.postprocessor.box_thresh = box_thresh
     return predictor
@@ -86,7 +86,7 @@ def forward_image(predictor: OCRPredictor, image: np.ndarray, device: torch.devi
     """
     with torch.no_grad():
         processed_batches = predictor.det_predictor.pre_processor([image])
-        out = predictor.det_predictor.model(processed_batches[0].to(device), return_model_output=True)
-        seg_map = out["out_map"].to("cpu").numpy()
+        out = predictor.det_predictor.model(processed_batches[0], return_model_output=True)
+        seg_map = out["out_map"].numpy()
 
     return seg_map

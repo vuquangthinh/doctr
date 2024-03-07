@@ -74,7 +74,7 @@ class KIEPredictor(nn.Module, _KIEPredictor):
 
         # Localize text elements
         loc_preds, out_maps = self.det_predictor(pages, return_maps=True, **kwargs)
-
+        
         # Detect document rotation and rotate pages
         seg_maps = [
             np.where(np.expand_dims(np.amax(out_map, axis=-1), axis=-1) > kwargs.get("bin_thresh", 0.3), 255, 0).astype(

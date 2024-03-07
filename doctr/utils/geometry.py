@@ -307,8 +307,10 @@ def rotate_image(
         exp_img = np.pad(image, ((h_pad // 2, h_pad - h_pad // 2), (w_pad // 2, w_pad - w_pad // 2), (0, 0)))
     else:
         exp_img = image
-
+        
+        
     height, width = exp_img.shape[:2]
+    
     rot_mat = cv2.getRotationMatrix2D((width / 2, height / 2), angle, 1.0)
     rot_img = cv2.warpAffine(exp_img, rot_mat, (width, height))
     if expand:
@@ -324,7 +326,9 @@ def rotate_image(
         if preserve_origin_shape:
             # rescale
             rot_img = cv2.resize(rot_img, image.shape[:-1][::-1], interpolation=cv2.INTER_LINEAR)
-
+            
+    cv2.imwrite("/Users/vuquangthinh/Documents/fencilux/eKYC/KHM_TrainOCR/doctr-teamsoft/rotate-id.png", rot_img)
+    
     return rot_img
 
 
