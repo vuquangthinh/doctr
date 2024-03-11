@@ -6,15 +6,32 @@
 from fastapi import APIRouter, File, UploadFile, status
 
 from app.schemas import RecognitionOut
-from app.vision import reco_predictor
+from app.vision import reco_predictor, latin_predictor, mrz_predictor, name_predictor
 from doctr.io import decode_img_as_tensor
 
 router = APIRouter()
 
 
-@router.post("/", response_model=RecognitionOut, status_code=status.HTTP_200_OK, summary="Perform text recognition")
+@router.post("/khm", response_model=RecognitionOut, status_code=status.HTTP_200_OK, summary="Perform text recognition")
 async def text_recognition(file: UploadFile = File(...)):
     """Runs docTR text recognition model to analyze the input image"""
     img = decode_img_as_tensor(file.file.read())
-    out = reco_predictor([img])
+    out = name_predictor([img])
+    return RecognitionOut(value=out[0][0])
+
+
+@router.post("/latin", response_model=RecognitionOut, status_code=status.HTTP_200_OK, summary="Perform text recognition")
+async def text_recognition(file: UploadFile = File(...)):
+    """Runs docTR text recognition model to analyze the input image"""
+    img = decode_img_as_tensor(file.file.read())
+    out = latin_predictor([img])
+    return RecognitionOut(value=out[0][0])
+
+
+
+@router.post("/mrz", response_model=RecognitionOut, status_code=status.HTTP_200_OK, summary="Perform text recognition")
+async def text_recognition(file: UploadFile = File(...)):
+    """Runs docTR text recognition model to analyze the input image"""
+    img = decode_img_as_tensor(file.file.read())
+    out = mrz_predictor.reco_predictor([img])
     return RecognitionOut(value=out[0][0])

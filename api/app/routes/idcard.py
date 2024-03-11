@@ -18,6 +18,7 @@ from doctr.datasets import VOCABS
 import cv2
 from app.detector.Cambodia_FieldDetector import Cambodia_FieldDetector as FieldDetector
 from app.detector.CardExtractor import CardExtractor
+from app.detector.FakeDetector import FakeDetector
 import time
 import os
 
@@ -28,29 +29,39 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def extract_text(image):
+  
+  fake = FakeDetector(os.path.join(BASE_DIR, 'models/fake-detector.pt'))
+  
+  score = fake.predict(image)
+  
   # extract card
   card = CardExtractor(os.path.join(BASE_DIR, 'models/card-detector.pt'))
 
   cardResult = card.predict(image)
 
   if cardResult is None:
-    return None
-  
-  image = cardResult['image']
+    return {
+      "result": False,
+      "check": "LOW_QUALITY"
+    }
+  else:
+    image = cardResult['image']
+    
+    # predict
+    field = FieldDetector(os.path.join(BASE_DIR, 'models/field-detector.pt'))
 
-  # predict
-  field = FieldDetector(os.path.join(BASE_DIR, 'models/field-detector.pt'))
+    c1 = time.time()
 
-  c1 = time.time()
+    result = field.predict(image)
 
-  result = field.predict(image)
+    c2 = time.time()
 
-  c2 = time.time()
-
-  return {
-    "result": result,
-    "time": c2 - c1
-  }
+    return {
+      "result": result,
+      "real_score": score,
+      "check": "FAKE_OR_EDITED" if score < 0.5 else "REAL",
+      "time": c2 - c1
+    }
 
 
 @router.post("/", status_code=status.HTTP_200_OK, summary="Perform IDCard")

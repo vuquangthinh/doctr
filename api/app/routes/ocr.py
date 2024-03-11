@@ -8,7 +8,7 @@ from typing import List
 from fastapi import APIRouter, File, UploadFile, status
 
 from app.schemas import OCROut
-from app.vision import predictor
+from app.vision import predictor, mrz_predictor
 from doctr.io import decode_img_as_tensor
 
 router = APIRouter()
@@ -26,3 +26,20 @@ async def perform_ocr(file: UploadFile = File(...)):
         for line in block.lines
         for word in line.words
     ]
+
+
+@router.post("/mrz", status_code=status.HTTP_200_OK, summary="Perform OCR")
+async def perform_ocr(file: UploadFile = File(...)):
+    """Runs docTR OCR model to analyze the input image"""
+    img = decode_img_as_tensor(file.file.read())
+    out = mrz_predictor([img])
+    
+    print('out', out)
+    return out
+
+    # return [
+    #     OCROut(box=(*word.geometry[0], *word.geometry[1]), value=word.value)
+    #     for block in out.pages[0].blocks
+    #     for line in block.lines
+    #     for word in line.words
+    # ]

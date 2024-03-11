@@ -8,7 +8,8 @@ from doctr.models import recognition_predictor, crnn_vgg16_bn
 import re
 import torch
 import os
-from app.vision import khm_predictor
+from app.vision import khm_predictor,latin_predictor,address_predictor, date_predictor, latin_ocr_predictor, mrz_predictor, name_predictor
+from app import latin_ocr
 
 # Recognition
 # current_dir = os.path.dirname(__file__)
@@ -21,7 +22,7 @@ def find_largest_image(boxes):
     max_area = 0
 
     for box in boxes:
-        x1, y1, x2, y2 = box
+        y1, x1, y2, x2 = box
 
         height = y2 - y1
         width = x2 - x1
@@ -50,16 +51,15 @@ class Cambodia_FieldDetector(FieldDetector):
       "mrz": "mrz" in boxImages and self.extractMRZ(image, boxImages["mrz"]),
 
       "expired_date": "expired_date" in boxImages and self.extractDate(image, boxImages["expired_date"]),
-      "start_date": "start_date" in boxImages and self.extractDate(image, boxImages["start_date"]),
+      # "start_date": "start_date" in boxImages and self.extractDate(image, boxImages["start_date"]),
       # "avatar": "avatar" in boxImages and [base64.b64encode(avatar) for avatar in boxImages["avatar"]],
     }
 
     # normalize MRZ to information
     if normalization:
       mrz = "mrz" in boxImages and self.extractMRZ(image, boxImages["mrz"])
-      if len(mrz):
+      if mrz and len(mrz):
         data = self.mrzExtract(mrz[0])
-
         # prefer MRZ
         result["id"] = data["id"] if "id" in data else result["id"]
         result["name_en"] = data["name"] if "name" in data else result["name_en"]
@@ -74,33 +74,31 @@ class Cambodia_FieldDetector(FieldDetector):
     # find longest ...
     largest_box = find_largest_image(metadata)
 
-    x1, y1, x2, y2 = largest_box
+    y1, x1, y2, x2 = largest_box
     fragment = image[y1:y2, x1:x2]
     
-    fragment = self.preprocessing_image(fragment)
+    # fragment = self.preprocessing_image(fragment)
     # ID is numeric
-    result = pytesseract.image_to_string(fragment, 
-      config='--psm 7').split("\n")
+    # result = pytesseract.image_to_string(fragment, 
+    #   config='--psm 7').split("\n")
+    result = "".join([x[0] for x in latin_ocr.image2text(fragment) if x])
+    
     result = [item for item in result if item.strip()]
 
-    return " ".join(result)
+    return "".join(result)
   
   def extractName(self, image, metadata):
+    
+    # sort box
+    metadata = sorted(metadata, key = lambda x: x[1])
     boxes = self.crop_and_recog(image, metadata)
+    
 
     output = []
+    
     for box in boxes:
       img = cv2.resize(box, None, fx=4, fy=4, interpolation=cv2.INTER_CUBIC)
-      fragment = img
-
-      # result = pytesseract.image_to_string(fragment, 
-        # config='--tessdata-dir /opt/homebrew/share/tessdata --psm 13 -l khm').split("\n")
-      # result = call_ocr_service(fragment).replace(" ", "")
-      
-      result = " ".join([x[0] for x in khm_predictor([fragment]) if x])
-
-      # result = [item for item in result if item.strip()]
-      # result = ' '.join([item.strip() for item in result])
+      result = "".join([x[0] for x in name_predictor([img]) if x])
       
       output.append(result)
 
@@ -126,29 +124,45 @@ class Cambodia_FieldDetector(FieldDetector):
     output = []
     for box in boxes:
 
-      fragment = self.preprocessing_image(box)
-      result = pytesseract.image_to_string(fragment, 
-        config='--psm 13 -l eng -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ').split("\n")
+      # result = pytesseract.image_to_string(fragment, 
+      #   config='--psm 13 -l eng -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ').split("\n")
+      
+      result = "".join([x[0] for x in latin_predictor([box]) if x])
       
       result = [item for item in result if item.strip()]
-      result = ' '.join([item.strip() for item in result])
+      result = ''.join([item.strip() for item in result])
       
       output.append(result)
 
     return " ".join(output)
   
   def extractMRZ(self, image, metadata):
+    
+    # sort by line
+    metadata = sorted(metadata, key = lambda x: x[0])
     boxes = self.crop_and_recog(image, metadata)
+    
 
     output = []
+    
     for box in boxes:
-      result = pytesseract.image_to_string(box, 
-        config='--psm 6 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ<0123456789').split("\n")  # tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ<0123456789').split("\n")
+      res = latin_ocr.image2text(box)
+      output.append(res)
       
-      result = [item.replace(" ", "") for item in result if item.strip()]
-      output.append(result)
+    # remove duplicate line
+    def remove_substring_lines(lines):
+        filtered_lines = []
+        for line in lines:        
+          if not any(line in other_line for other_line in lines if other_line != line):
+            if "<<<" in line:
+              filtered_lines.append(line)
+        return filtered_lines
 
-    return output
+    # Usage example
+    output = remove_substring_lines(output)
+
+    # fix mrz < vs K
+    return [output]
   
   def _khmerToLatin(self, text):
     khmer_to_latin = {
@@ -176,9 +190,11 @@ class Cambodia_FieldDetector(FieldDetector):
     x1, y1, x2, y2 = largest_box
     fragment = image[y1:y2, x1:x2]
     
-    fragment = self.preprocessing_image(fragment)
+    # fragment = self.preprocessing_image(fragment)
     # ID is numeric
-    result = pytesseract.image_to_string(fragment, lang='khm', config='--psm 7 -c tessedit_char_whitelist="០១២៣៤៥៦៧៨៩."').split("\n")    
+    # result = pytesseract.image_to_string(fragment, lang='khm', config='--psm 7 -c tessedit_char_whitelist="០១២៣៤៥៦៧៨៩."').split("\n")    
+    result = "".join([x[0] for x in date_predictor([fragment]) if x])
+    
     result = [item for item in result if item.strip()]
 
     date_str = self._khmerToLatin(" ".join(result))
@@ -196,12 +212,14 @@ class Cambodia_FieldDetector(FieldDetector):
     # find longest ...
     largest_box = find_largest_image(metadata)
 
-    x1, y1, x2, y2 = largest_box
+    y1, x1, y2, x2 = largest_box
     fragment = image[y1:y2, x1:x2]
     
-    fragment = self.preprocessing_image(fragment)
+    # fragment = self.preprocessing_image(fragment)
     # ID is numeric
-    result = pytesseract.image_to_string(fragment, lang='khm', config='--psm 13 -c tessedit_char_blacklist=0123456789,;').split("\n")
+    # result = pytesseract.image_to_string(fragment, lang='khm', config='--psm 13 -c tessedit_char_blacklist=0123456789,;').split("\n")
+    result = "".join([x[0] for x in khm_predictor([fragment]) if x])
+    
     result = [item for item in result if item.strip()]
 
     if "ប្រុស" in result: # male
@@ -214,16 +232,18 @@ class Cambodia_FieldDetector(FieldDetector):
     return " ".join(result)
   
   def extractText(self, image, metadata):
+    
     boxes = self.crop_and_recog(image, metadata)
 
     output = []
     for box in boxes:
-      fragment = self.preprocessing_image(box)
-      result = pytesseract.image_to_string(fragment, 
-        config='--psm 13 -l khm -c tessedit_char_blacklist=/.').split("\n")
+      # fragment = self.preprocessing_image(box)
+      # result = pytesseract.image_to_string(fragment, 
+      #   config='--psm 13 -l khm -c tessedit_char_blacklist=/.').split("\n")
+      result = "".join([x[0] for x in address_predictor([box]) if x])
 
-      result = [item for item in result if item.strip()]
-      result = ' '.join([item.strip() for item in result])
+      # result = [item for item in result if item.strip()]
+      # result = ''.join([item.strip() for item in result])
       
       output.append(result)
 

@@ -107,8 +107,6 @@ def crop_and_straighten(image, mask):
     warped = cv2.resize(warped, (WIDTH_OF_RECTANGLE, HEIGHT_OF_RECTANGLE))
     # # show_image(warped, cvt=cv2.COLOR_RGB2BGR)
 
-    cv2.imwrite("warped.jpg", warped)
-
     # osd = pytesseract.image_to_osd(warped)
     # angle = int(osd.split('\n')[1].split(':')[1])
 
@@ -160,7 +158,7 @@ class CardExtractor:
       if result.masks is None:
         return None
 
-      mask = (result.masks.data[0].numpy() * 255).astype('uint8')
+      mask = (result.masks.data[0].cpu().numpy() * 255).astype('uint8')
       h2, w2, c2 = results[0].orig_img.shape
       maskx = cv2.resize(mask, (w2, h2))
 

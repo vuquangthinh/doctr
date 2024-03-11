@@ -61,13 +61,12 @@ def process(ip_image):
 
 class FieldDetector(ABC):
   def __init__(self, model, debug = False) -> None:
-    self.model = YOLO(model)
+    self.model = YOLO(model).to('cuda')
     self.nms_threshold = 0.15
     self.debug = debug
 
   def predict(self, image, normalization = True):
 
-    cv2.imwrite('platef.jpg', image)
     # increase size to better detect
     image = cv2.resize(image, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
 
@@ -95,19 +94,37 @@ class FieldDetector(ABC):
           boxImages[label] = []
         
         # normalize
-          
-        boxImages[label].append([
-          max(0, int(left) - int(width*0.02)),
-          max(0, int(top) - int(height*0.1)), 
-          int(right) + int(width*0.02), 
-          int(bottom) + int(height*0.3)
-          # max(0, int(left)  , int(top), int(right), int(bottom)
-        ])
+        
+        if label == 'mrz':
+          boxImages[label].append([
+            max(0, int(top) - int(height*0.1)), 
+            max(0, int(left) - int(width*0.1)),
+            int(bottom) + int(height*0.1),
+            int(right) + int(width*0.1), 
+            # max(0, int(left)  , int(top), int(right), int(bottom)
+          ])
+        elif label == 'name':
+          boxImages[label].append([
+            max(0, int(top) - int(height*0.08)), 
+            max(0, int(left) - int(width*0.03)),
+            int(bottom) + int(height*0.08),
+            int(right) + int(width*0.03), 
+            # max(0, int(left)  , int(top), int(right), int(bottom)
+          ])
+        else:
+          boxImages[label].append([
+            max(0, int(top) - int(height*0.05)), 
+            max(0, int(left) - int(width*0.03)),
+            int(bottom) + int(height*0.05),
+            int(right) + int(width*0.03), 
+            # max(0, int(left)  , int(top), int(right), int(bottom)
+          ])
 
 
         if self.debug:
           # cv2.rectangle(image2, (left, top),(right, bottom), (255, 0, 0), 2)
           # cv2.putText(image2, label,(left, bottom+20),cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 1, cv2.LINE_AA)
+          left, top, right, bottom = boxImages[label][len(boxImages[label]) - 1]
           cv2.imwrite("./image-" + label + "--" + str(t) + ".jpg", image[top:bottom, left:right])
         t += 1
         
@@ -137,7 +154,7 @@ class FieldDetector(ABC):
 
     for field, value in boxImages.items():
       x = np.array(value)
-      boxImages[field] = self.sort_each_category(x)
+      boxImages[field] = self.sort_each_category(x, field)
 
     return self.boxImagesToText(image, boxImages, normalization)
   
@@ -165,6 +182,8 @@ class FieldDetector(ABC):
       birthday = None
 
     sex = line2[7:8]
+    if sex != 'M' and sex != 'F':
+      sex = None
 
     try:
       expiry_date = line2[8:14]
@@ -175,7 +194,7 @@ class FieldDetector(ABC):
       expiry_date = None
     
     nationality = line2[15:18]
-
+    
     surname = str(line3[:line3.find("<<<")]).replace("<", ' ').strip()
     surname = re.sub(r'\s+', ' ', surname)
 
@@ -192,19 +211,12 @@ class FieldDetector(ABC):
   def crop_and_recog(self, image, boxes):
             crop = []
             if len(boxes) == 1:
-                xmin, ymin, xmax, ymax = boxes[0]
+                ymin, xmin, ymax, xmax = boxes[0]
                 crop.append(image[ymin:ymax, xmin:xmax])
             else:
-                def sort_boxes(box):
-                  xmin, ymin, xmax, ymax = box
-                  return ymin, xmin
-                
-                sorted_boxes = sorted(boxes, key=sort_boxes)
-                for box in sorted_boxes:
-                    xmin, ymin, xmax, ymax = box
+                for box in boxes:
+                    ymin, xmin, ymax, xmax = box
                     crop.append(image[ymin:ymax, xmin:xmax])
-
-                    # print("box", xmin, ymin, xmax, ymax)
 
             return crop
   
@@ -236,7 +248,7 @@ class FieldDetector(ABC):
 
     # return threshed
 
-  def sort_each_category(self, category_text_boxes):
+  def sort_each_category(self, category_text_boxes, field):
     def get_y1(x):
       return x[0]
 
@@ -245,7 +257,7 @@ class FieldDetector(ABC):
   
     min_y1 = min(category_text_boxes, key=get_y1)[0]
 
-    mask = np.where(category_text_boxes[:, 0] < min_y1 + 10, True, False)
+    mask = np.where(category_text_boxes[:, 0] < min_y1 + 15, True, False)
     line1_text_boxes = category_text_boxes[mask]
     line2_text_boxes = category_text_boxes[np.invert(mask)]
 
