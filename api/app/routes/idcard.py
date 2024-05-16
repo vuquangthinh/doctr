@@ -29,11 +29,11 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def extract_text(image):
-  
+
   fake = FakeDetector(os.path.join(BASE_DIR, 'models/fake-detector.pt'))
-  
+
   score = fake.predict(image)
-  
+
   # extract card
   card = CardExtractor(os.path.join(BASE_DIR, 'models/card-detector.pt'))
 
@@ -46,12 +46,12 @@ def extract_text(image):
     }
   else:
     image = cardResult['image']
-    
+
     # predict
     field = FieldDetector(os.path.join(BASE_DIR, 'models/field-detector.pt'))
 
     c1 = time.time()
-
+    
     result = field.predict(image)
 
     c2 = time.time()
@@ -64,10 +64,24 @@ def extract_text(image):
     }
 
 
+import shutil
+def save_upload_file(image, path):
+  with open(path, 'wb+') as buffer:
+    shutil.copyfileobj(image.file, buffer)
+
+from PIL import ImageOps
+
 @router.post("/", status_code=status.HTTP_200_OK, summary="Perform IDCard")
 async def perform_card(file: UploadFile = File(...)):
     # img = decode_img_as_tensor(file.file.read())
-    img = np.array(Image.open(BytesIO(file.file.read()), mode="r").convert("RGB"), np.uint8, copy=True)
+   # save_upload_file(file, "data.jpg")
+    image = Image.open(BytesIO(file.file.read()), mode = 'r').convert('RGB')
+
+    image = ImageOps.exif_transpose(image)
+
+    image.save('./output.jpg')
+    img = np.array(image, np.uint8, copy=True) # np.array(Image.open(BytesIO(file.file.read()), mode="r").convert("RGB"), np.uint8, copy=True)
+
     out = extract_text(img)
-    
+
     return out

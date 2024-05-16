@@ -60,6 +60,9 @@ class Cambodia_FieldDetector(FieldDetector):
       mrz = "mrz" in boxImages and self.extractMRZ(image, boxImages["mrz"])
       if mrz and len(mrz):
         data = self.mrzExtract(mrz[0])
+        
+        print("mrz", mrz)
+        print(data)
         # prefer MRZ
         result["id"] = data["id"] if "id" in data else result["id"]
         result["name_en"] = data["name"] if "name" in data else result["name_en"]
@@ -142,7 +145,6 @@ class Cambodia_FieldDetector(FieldDetector):
     metadata = sorted(metadata, key = lambda x: x[0])
     boxes = self.crop_and_recog(image, metadata)
     
-
     output = []
     
     for box in boxes:

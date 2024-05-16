@@ -6,7 +6,9 @@ from PIL import Image
 from app.routes.idcard import extract_text
 
 def main():
-    st.title("KHMER_CARD")
+    st.title("Demo for Cambodia ID")
+    image_width = 300
+    st.image(os.path.dirname(__file__) + "/logo_1609836969.svg", width=image_width)
     st.write("KHMEROCR")
     
     # File Upload

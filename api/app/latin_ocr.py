@@ -10,8 +10,11 @@ np.bool = np.bool_
 ocr = PaddleOCR(cls=True, lang='en', use_gpu=True, use_angle_cls=True)
 
 def image2text(image):
-  result = ocr.ocr(image)  
-  
+  result = ocr.ocr(image)
+
+  print("rault", result)
+
   if len(result):
     return result[0][1][0]
+    # return result[0][0][1][0]
   return ""

@@ -17,7 +17,8 @@ import torch
 import os
 
 reco_khm_model = crnn_vgg16_bn(vocab=VOCABS["khm"])
-reco_khm_model.load_state_dict(torch.load(os.path.join('/home/thanhpcc/Documents/testx/doctr/crnn_vgg16_bn_20240308-180030.pt'), map_location=torch.device('cuda:0')))
+reco_khm_model.load_state_dict(torch.load(os.path.join('/home/thanhpcc/Documents/testx/doctr/crnn_vgg16_bn_20240308-180030.pt'),
+                                          map_location=torch.device('cuda:0')))
 
 predictor = ocr_predictor(reco_arch=reco_khm_model, pretrained=True)
 det_predictor = predictor.det_predictor
@@ -31,10 +32,10 @@ khm_predictor = recognition_predictor(
 
 mrz_model = crnn_vgg16_bn(vocab=VOCABS["mrz_code"])
 mrz_model.load_state_dict(torch.load(os.path.join(os.path.join('/home/thanhpcc/Documents/testx/doctr/mrz.pt')), map_location=torch.device('cuda:0')))
-mrz_predictor = ocr_predictor(reco_arch=mrz_model, 
+mrz_predictor = ocr_predictor(reco_arch=mrz_model,
                               pretrained=True,
-                              straighten_pages=True, 
-                              preserve_aspect_ratio=True, 
+                              straighten_pages=True,
+                              preserve_aspect_ratio=True,
                               detect_orientation=True)
 
 latin_ocr_predictor = ocr_predictor(pretrained=True)

@@ -19,7 +19,7 @@ def kernel_psf(angle, d, size=20):
 def wiener_filter(img, kernel, K):
     kernel /= np.sum(kernel)
     copy_img = np.copy(img)
-    copy_img = np.fft.fft2(copy_img)            #  2D fast fourier transform 
+    copy_img = np.fft.fft2(copy_img)            #  2D fast fourier transform
     kernel = np.fft.fft2(kernel, s = img.shape)
     kernel = np.conj(kernel) / (np.abs(kernel) ** 2 + K)     # wiener formula implementation
     copy_img = copy_img * kernel                             # conversion blurred to deblurred
@@ -30,31 +30,31 @@ def process(ip_image):
     a=2.2                                                          # contrast
     ang=np.deg2rad(90)                                             # angle psf
     d=20                                                         # distance psf
-    
+
     b, g, r = cv2.split(ip_image)
 
-    # normalization of split images 
+    # normalization of split images
     img_b = np.float32(b)/255.0
     img_g = np.float32(g)/255.0
     img_r = np.float32(r)/255.0
-    #psf calculation 
+    #psf calculation
 
     psf = kernel_psf(ang, d)
     #wiener for all split images
-    filtered_img_b = wiener_filter(img_b, psf, K = 0.0060)          # small value of k that is snr as if 0 filter will be inverse filter 
+    filtered_img_b = wiener_filter(img_b, psf, K = 0.0060)          # small value of k that is snr as if 0 filter will be inverse filter
     filtered_img_g = wiener_filter(img_g, psf, K = 0.0060)
     filtered_img_r = wiener_filter(img_r, psf, K = 0.0060)
     #merge to form colored image
     filtered_img=cv2.merge((filtered_img_b,filtered_img_g,filtered_img_r))
-    #converting float to unit 
+    #converting float to unit
     filtered_img=np.clip(filtered_img*255,0,255)   # clipping values between 0 and 255
     filtered_img=np.uint8(filtered_img)
     #changing contrast of the image
     filtered_img=cv2.convertScaleAbs(filtered_img,alpha=a)
     #removing gibbs phenomena or rings from the image
-    filtered_img = cv2.fastNlMeansDenoisingColored(filtered_img, None, 10, 10, 7, 15) 
-    filtered_img = cv2.fastNlMeansDenoisingColored(filtered_img, None, 10, 10, 7, 15) # removing left over rings in post processing again     
-   
+    filtered_img = cv2.fastNlMeansDenoisingColored(filtered_img, None, 10, 10, 7, 15)
+    filtered_img = cv2.fastNlMeansDenoisingColored(filtered_img, None, 10, 10, 7, 15) # removing left over rings in post processing again
+
     # using unblurred image to get angle and id of aruco
     return filtered_img
 
@@ -92,31 +92,31 @@ class FieldDetector(ABC):
 
         if label not in boxImages:
           boxImages[label] = []
-        
+
         # normalize
-        
+
         if label == 'mrz':
           boxImages[label].append([
-            max(0, int(top) - int(height*0.1)), 
+            max(0, int(top) - int(height*0.1)),
             max(0, int(left) - int(width*0.1)),
             int(bottom) + int(height*0.1),
-            int(right) + int(width*0.1), 
+            int(right) + int(width*0.1),
             # max(0, int(left)  , int(top), int(right), int(bottom)
           ])
         elif label == 'name':
           boxImages[label].append([
-            max(0, int(top) - int(height*0.08)), 
+            max(0, int(top) - int(height*0.08)),
             max(0, int(left) - int(width*0.03)),
             int(bottom) + int(height*0.08),
-            int(right) + int(width*0.03), 
+            int(right) + int(width*0.03),
             # max(0, int(left)  , int(top), int(right), int(bottom)
           ])
         else:
           boxImages[label].append([
-            max(0, int(top) - int(height*0.05)), 
+            max(0, int(top) - int(height*0.05)),
             max(0, int(left) - int(width*0.03)),
             int(bottom) + int(height*0.05),
-            int(right) + int(width*0.03), 
+            int(right) + int(width*0.03),
             # max(0, int(left)  , int(top), int(right), int(bottom)
           ])
 
@@ -127,7 +127,7 @@ class FieldDetector(ABC):
           left, top, right, bottom = boxImages[label][len(boxImages[label]) - 1]
           cv2.imwrite("./image-" + label + "--" + str(t) + ".jpg", image[top:bottom, left:right])
         t += 1
-        
+
 
     # for result in results:
     #   boxes = result.boxes.cpu().numpy()
@@ -150,16 +150,16 @@ class FieldDetector(ABC):
     #         boxImages[classId] = []
 
     #       boxImages[classId].append([int(x1),int(y1),int(x2),int(y2)])
-        
+
 
     for field, value in boxImages.items():
       x = np.array(value)
       boxImages[field] = self.sort_each_category(x, field)
 
     return self.boxImagesToText(image, boxImages, normalization)
-  
+
   @abstractmethod
-  def boxImagesToText(self, image, boxImages, normalization = True): 
+  def boxImagesToText(self, image, boxImages, normalization = True):
     pass
 
 
@@ -192,9 +192,9 @@ class FieldDetector(ABC):
       expiry_date = date_str
     except Exception as ex:
       expiry_date = None
-    
+
     nationality = line2[15:18]
-    
+
     surname = str(line3[:line3.find("<<<")]).replace("<", ' ').strip()
     surname = re.sub(r'\s+', ' ', surname)
 
@@ -206,7 +206,7 @@ class FieldDetector(ABC):
        "nationality": nationality,
        "name": surname
     }
-  
+
 
   def crop_and_recog(self, image, boxes):
             crop = []
@@ -219,9 +219,9 @@ class FieldDetector(ABC):
                     crop.append(image[ymin:ymax, xmin:xmax])
 
             return crop
-  
+
   def preprocessing_image(self, img):
-    
+
     image = cv2.resize(img, None, fx=10, fy=10, interpolation=cv2.INTER_CUBIC)
 
     kernel = cv2.getStructuringElement(cv2.MORPH_CROSS, (2, 2))
@@ -235,14 +235,14 @@ class FieldDetector(ABC):
     # gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     # gray = cv2.multiply(gray, 1.5)
-    
+
     # #blur remove noise
     # blured1 = cv2.medianBlur(gray,3)
     # blured2 = cv2.medianBlur(gray,81)
     # divided = np.ma.divide(blured1, blured2).data
     # normed = np.uint8(255*divided/divided.max())
-    
-    
+
+
     # #Threshold image
     # th, threshed = cv2.threshold(normed, 100, 255, cv2.THRESH_OTSU )
 
@@ -254,7 +254,7 @@ class FieldDetector(ABC):
 
     def get_x1(x):
       return x[1]
-  
+
     min_y1 = min(category_text_boxes, key=get_y1)[0]
 
     mask = np.where(category_text_boxes[:, 0] < min_y1 + 15, True, False)
