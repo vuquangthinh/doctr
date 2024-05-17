@@ -188,6 +188,7 @@ class Cambodia_FieldDetector(FieldDetector):
     return latin_number
   
   def extractDate(self, image, metadata):
+    return False
     # find longest ...
     largest_box = find_largest_image(metadata)
 

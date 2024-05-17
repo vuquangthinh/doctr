@@ -254,7 +254,7 @@ def draw_quadrilateral_on_image(image, mask):
     epsilon = 0.02 * cv2.arcLength(hull, True)
     approx_polygon = cv2.approxPolyDP(hull, epsilon, True)
     
-    approx_polygon = expand_polygon(approx_polygon, 1.05)
+    # approx_polygon = expand_polygon(approx_polygon, 1.02)
     # print(approx_polygon)
 
     # Draw the quadrilateral contour on the image

@@ -135,7 +135,7 @@ wandb/
 .idea/
 
 # Checkpoints
-*.pt
+# *.pt
 *.pb
 *.index
 
