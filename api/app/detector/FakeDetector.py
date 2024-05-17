@@ -5,7 +5,7 @@ import numpy as np
 
 class FakeDetector:
   def __init__(self, model) -> None:
-    self.model = YOLO(model)
+    self.model = YOLO(model).to('cuda')
 
   # extract card in image
   def predict(self, image):

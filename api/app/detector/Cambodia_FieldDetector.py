@@ -54,6 +54,8 @@ class Cambodia_FieldDetector(FieldDetector):
       # "start_date": "start_date" in boxImages and self.extractDate(image, boxImages["start_date"]),
       # "avatar": "avatar" in boxImages and [base64.b64encode(avatar) for avatar in boxImages["avatar"]],
     }
+    
+    print("boxImages", boxImages)
 
     # normalize MRZ to information
     if normalization:
@@ -143,7 +145,7 @@ class Cambodia_FieldDetector(FieldDetector):
     
     # sort by line
     metadata = sorted(metadata, key = lambda x: x[0])
-    boxes = self.crop_and_recog(image, metadata)
+    boxes = self.crop_and_recog(image, [[max(x[0] - 2, 0), max(0, x[1] - 2), x[2] + 2, x[3] + 2] for x in metadata])
     
     output = []
     
